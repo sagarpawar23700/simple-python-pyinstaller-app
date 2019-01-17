@@ -1,14 +1,31 @@
-pipeline {
-    agent none 
-    stages {
-        stage('Build') { 
+        stage('Deliver') {
             agent {
                 docker {
-                    image 'python:2-alpine' 
+                    image 'cdrx/pyinstaller-linux:python2'
                 }
             }
             steps {
-                sh 'python -m py_compile sources/add2vals.py sources/calc.py' 
+                sh 'pyinstaller --onefile sources/add2vals.py'
+            }
+            post {
+                success {
+                    archiveArtifacts 'dist/add2vals'
+                }
+            }
+        }
+so that you end up with:
+
+pipeline {
+    agent none
+    stages {
+        stage('Build') {
+            agent {
+                docker {
+                    image 'python:2-alpine'
+                }
+            }
+            steps {
+                sh 'python -m py_compile sources/add2vals.py sources/calc.py'
             }
         }
         stage('Test') {
@@ -23,6 +40,21 @@ pipeline {
             post {
                 always {
                     junit 'test-reports/results.xml'
+                }
+            }
+        }
+        stage('Deliver') { 
+            agent {
+                docker {
+                    image 'cdrx/pyinstaller-linux:python2' 
+                }
+            }
+            steps {
+                sh 'pyinstaller --onefile sources/add2vals.py' 
+            }
+            post {
+                success {
+                    archiveArtifacts 'dist/add2vals' 
                 }
             }
         }
